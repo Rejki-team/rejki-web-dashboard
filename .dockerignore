@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Rejki Web Dashboard — Docker Build Context Ignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Node modules (dependencies diinstall ulang di container)
+node_modules/
+
+# Build output lokal (tidak relevan untuk container build)
+dist/
+
+# Coverage & test artifacts
+coverage/
+.vscode/
+
+# Environment files
+.env*
+
+# Documentation
+*.md
+
+# Git
+.git
+.gitignore
