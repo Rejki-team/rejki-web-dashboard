@@ -37,16 +37,18 @@ Langkah-langkah WAJIB yang harus dilakukan agent untuk setiap tugas:
    ```
    Kemudian buka GitHub → PR dari branch → `develop`.
 
-5. **Setelah PR di-merge**, hapus branch lokal:
+5. **Setelah PR di-merge**, hapus branch lokal & remote:
    ```bash
-   git branch -d feat/ws-<nama-fitur>
-   git checkout develop && git pull origin develop
+   git checkout develop
+   git pull origin develop
+   git branch -d feat/ws-<nama-fitur>               # hapus lokal
+   git push origin --delete feat/ws-<nama-fitur>     # hapus remote
    ```
 
 **Aturan tambahan:**
 - **Tidak menggabungkan multiple task dalam satu branch.**
 - **Jangan merge sendiri** — selalu lewat PR.
-- **Branch dihapus** setelah PR di-merge ke `develop`.
+- **Branch lokal & remote dihapus** setelah PR di-merge ke `develop`.
 
 ---
 
