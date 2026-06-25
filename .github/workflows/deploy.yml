@@ -1,18 +1,18 @@
-name: Deploy to Dev
+name: Deploy to Production
 
 on:
   push:
-    branches: [develop]
-  workflow_dispatch:
+    branches: [main]
 
 concurrency:
-  group: deploy-web-dev
-  cancel-in-progress: true
+  group: deploy-web-prod
+  cancel-in-progress: false
 
 jobs:
-  deploy-dev:
-    name: Deploy to VPS (dev)
+  deploy:
+    name: Deploy to VPS (prod)
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -30,15 +30,15 @@ jobs:
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             echo "==> Pull latest web image"
-            docker compose -f /opt/rejki/dev/docker-compose.yml pull rejki-web
+            docker compose -f /opt/rejki/prod/docker-compose.yml pull rejki-web
 
             echo "==> Restart rejki-web service"
-            docker compose -f /opt/rejki/dev/docker-compose.yml up -d rejki-web
+            docker compose -f /opt/rejki/prod/docker-compose.yml up -d rejki-web
 
             echo "==> Verify"
-            docker compose -f /opt/rejki/dev/docker-compose.yml ps rejki-web
+            docker compose -f /opt/rejki/prod/docker-compose.yml ps rejki-web
 
             echo "==> Prune old images"
             docker image prune -f
 
-            echo "✅ Web dev deploy complete"
+            echo "✅ Web production deploy complete"
