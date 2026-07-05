@@ -30,13 +30,13 @@ jobs:
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             echo "==> Pull latest web image"
-            docker compose -f /opt/rejki/prod/docker-compose.yml pull rejki-web
+            docker compose -f /opt/rejki/prod/docker-compose.prod.yml --env-file /opt/rejki/prod/.env pull rejki-web
 
             echo "==> Restart rejki-web service"
-            docker compose -f /opt/rejki/prod/docker-compose.yml up -d rejki-web
+            docker compose -f /opt/rejki/prod/docker-compose.prod.yml --env-file /opt/rejki/prod/.env up -d rejki-web
 
             echo "==> Verify"
-            docker compose -f /opt/rejki/prod/docker-compose.yml ps rejki-web
+            docker compose -f /opt/rejki/prod/docker-compose.prod.yml --env-file /opt/rejki/prod/.env ps rejki-web
 
             echo "==> Prune old images"
             docker image prune -f
