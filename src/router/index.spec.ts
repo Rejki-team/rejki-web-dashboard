@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { markRaw } from 'vue'
 import { router } from './index'
 import { useAuthStore } from '@/stores/auth'
-import { useToast } from '@/composables/useToast'
 import { makeJwt } from '@/test/helpers'
 
 // Mock API
@@ -13,13 +11,7 @@ vi.mock('@/api/authApi', () => ({
 vi.mock('@/api/http', () => ({ installAuthBridge: vi.fn() }))
 
 import { authApi } from '@/api/authApi'
-import { installAuthBridge } from '@/api/http'
 
-// Reset router ke state awal antar test.
-async function resetRouter() {
-  router.push = vi.fn() as unknown as typeof router.push
-  // Simpan replace asli untuk guard.
-}
 
 describe('router guard', () => {
   beforeEach(async () => {
@@ -32,15 +24,9 @@ describe('router guard', () => {
     auth.bootstrap()
     auth.clearSession() // pastikan bersih
 
-    const from = markRaw({ name: 'pekerja', path: '/pekerja' } as never)
-    const result = await router.resolve('/pekerja')
+    const pushSpy = vi.fn()
     // Guard global butuh navigasi nyata. Gunakan beforeEach langsung.
     // Ambil guard dari router.
-    const guards = (router as unknown as { beforeEachGuards: { fn: Function }[] }).beforeEachGuards
-    // Karena beforeEachGuards tidak exposed, uji via resolve + kondisi.
-    // Gunakan pendekatan: push lalu cek redirect.
-    const pushSpy = vi.fn()
-    const originalPush = router.push
     router.push = pushSpy as never
     try {
       await router.push('/pekerja')
