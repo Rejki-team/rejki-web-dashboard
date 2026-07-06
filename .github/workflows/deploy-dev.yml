@@ -1,7 +1,9 @@
 name: Deploy to Dev
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [develop]
   workflow_dispatch:
 
@@ -13,6 +15,7 @@ jobs:
   deploy-dev:
     name: Deploy to VPS (dev)
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
 
