@@ -8,7 +8,7 @@ import { RouterLink } from 'vue-router'
 const BaseModalStub = defineComponent({
   props: { open: Boolean, title: String, size: String },
   emits: ['update:open'],
-  setup(props, { slots, emit }) {
+  setup(props, { slots }) {
     if (!props.open) return () => null
     return () =>
       h('div', { class: 'modal-open' }, [
@@ -23,7 +23,7 @@ const BaseModalStub = defineComponent({
 const PopupFotoStub = defineComponent({
   props: { open: Boolean, urls: Array, title: String },
   emits: ['update:open'],
-  setup(props, { emit }) {
+  setup(props) {
     if (!props.open) return () => null
     return () =>
       h(
