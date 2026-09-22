@@ -1,14 +1,12 @@
 <script setup lang="ts">
 // Halaman Pengelolaan Pengguna (Task 11.1–11.5).
 // - Tabel pengajuan KYC + ikon Mata → detail.
-// - Detail: NIK ter-mask (backend hanya kirim nik_masked) + ClickToView Foto KTP & Selfie
-//   (audited: GET /users/admin/kyc/{id}/documents/{kind}).
+// - Detail: NIK + Foto KTP & Selfie semuanya ClickToView (ter-mask default, dibuka via klik,
+//   akses teraudit di backend: GET /users/admin/kyc/{id}/nik dan .../documents/{kind}).
 // - Tolak/Terima (alasan wajib, terkunci setelah verifikasi) → POST review.
 // - Bulk select + Suspend pengguna (POST /auth/admin/users/suspend, partial-success).
 // - Search, sort status, Export CSV.
 //
-// CATATAN GROUNDED: tidak ada endpoint untuk membuka NIK penuh — backend hanya menyediakan
-// `nik_masked`. Maka NIK ditampilkan ter-mask permanen (tidak mengada-ada endpoint reveal).
 // Bulk suspend memakai profile_id; daftar KYC memuat `id` submission, sehingga suspend
 // memerlukan profile_id dari detail. Untuk bulk dari tabel, kita pakai field profile_id yang
 // tersedia pada detail — sehingga suspend massal di sini menggunakan submission yang dipilih
@@ -95,6 +93,11 @@ function fetchKtp(): Promise<string> {
 function fetchSelfie(): Promise<string> {
   if (!current.value) return Promise.reject(new Error('no submission'))
   return penggunaApi.documentUrl(current.value.id, 'selfie')
+}
+// Fetch NIK penuh (audited) — dipakai MaskedValue text mode (F-26/F-27a).
+function fetchNik(): Promise<string> {
+  if (!current.value) return Promise.reject(new Error('no submission'))
+  return penggunaApi.revealNik(current.value.id)
 }
 
 const isLocked = computed(
@@ -224,8 +227,14 @@ async function confirmSuspend(args: { reason: string; permanent: boolean; file: 
           <div>
             <dt class="text-slate-500">NIK</dt>
             <dd>
-              <!-- NIK hanya tersedia ter-mask dari backend (tidak ada endpoint reveal). -->
-              <span class="font-mono">{{ current.nik_masked ?? '-' }}</span>
+              <MaskedValue
+                v-if="current.nik_masked"
+                mode="text"
+                :masked="current.nik_masked"
+                label="NIK"
+                :fetch-real="fetchNik"
+              />
+              <span v-else class="font-mono">-</span>
             </dd>
           </div>
           <div>

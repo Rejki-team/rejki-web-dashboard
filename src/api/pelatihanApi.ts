@@ -21,6 +21,10 @@ export interface CreatePelatihanPayload {
   tanggal_selesai?: string | null
   foto_urls?: string[]
   jumlah_peserta?: number | null
+  // Rekening perusahaan penyelenggara (F-9) — WAJIB, backend menolak 422 bila kosong.
+  bank_name: string
+  bank_account_number: string
+  bank_account_holder_name: string
 }
 
 export type UpdatePelatihanPayload = Omit<CreatePelatihanPayload, 'foto_urls'>

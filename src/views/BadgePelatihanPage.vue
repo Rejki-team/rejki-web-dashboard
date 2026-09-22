@@ -2,9 +2,8 @@
 // Halaman Badge Pelatihan (Task 9.1–9.3).
 // Tabel badge + ikon Mata → detail + tampilkan Sertifikat + Tolak/Terima (alasan wajib, terkunci).
 //
-// CATATAN GROUNDED: backend admin_badge_detail mengembalikan BadgeResponse yang hanya memuat
-// `sertifikat_object_key` (BUKAN presigned read URL). Maka sertifikat ditampilkan sebagai
-// referensi object key — tidak ada URL gambar yang dapat dirender langsung (tidak mengada-ada).
+// Sertifikat dirender sebagai gambar nyata via <PopupFoto> memakai
+// `sertifikat_read_url` (presigned, F-10 P3.2) dari endpoint admin detail.
 import { ref, computed } from 'vue'
 import { useServerTable } from '@/composables/useServerTable'
 import { pelatihanApi } from '@/api/pelatihanApi'
@@ -21,8 +20,10 @@ import BaseIcon from '@/components/ui/BaseIcon.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ExportCsvButton from '@/components/ui/ExportCsvButton.vue'
 import ModalConfirm from '@/components/ui/ModalConfirm.vue'
+import PopupFoto from '@/components/ui/PopupFoto.vue'
 
 const toast = useToast()
+const photoOpen = ref(false)
 
 const table = useServerTable<AdminBadge>({
   endpoint: pelatihanApi.badgeListEndpoint,
@@ -158,9 +159,18 @@ const isLocked = computed(
             <dd><StatusBadge :status="current.status" /></dd>
           </div>
           <div class="sm:col-span-2">
-            <dt class="text-slate-500">Sertifikat (object key)</dt>
-            <dd class="break-all font-mono text-xs">
-              {{ current.sertifikat_object_key ?? 'Tidak ada' }}
+            <dt class="mb-1 text-slate-500">Sertifikat</dt>
+            <dd>
+              <BaseButton
+                v-if="current.sertifikat_read_url"
+                variant="ghost"
+                size="sm"
+                @click="photoOpen = true"
+              >
+                <BaseIcon name="photo" :size="16" />
+                Lihat Sertifikat
+              </BaseButton>
+              <span v-else class="text-xs text-slate-400">Tidak ada sertifikat.</span>
             </dd>
           </div>
           <div v-if="current.review_note" class="sm:col-span-2">
@@ -189,6 +199,13 @@ const isLocked = computed(
       :reason-min-length="1"
       :loading="reviewing"
       @confirm="confirmReview"
+    />
+
+    <PopupFoto
+      v-if="current?.sertifikat_read_url"
+      v-model:open="photoOpen"
+      :urls="[current.sertifikat_read_url]"
+      title="Sertifikat"
     />
   </div>
 </template>

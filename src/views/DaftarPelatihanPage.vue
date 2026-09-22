@@ -65,6 +65,9 @@ const form = reactive<CreatePelatihanPayload>({
   lokasi: '',
   tanggal_mulai: '',
   jumlah_peserta: null,
+  bank_name: '',
+  bank_account_number: '',
+  bank_account_holder_name: '',
 })
 
 function resetForm() {
@@ -74,6 +77,9 @@ function resetForm() {
   form.lokasi = ''
   form.tanggal_mulai = ''
   form.jumlah_peserta = null
+  form.bank_name = ''
+  form.bank_account_number = ''
+  form.bank_account_holder_name = ''
 }
 
 function openAdd() {
@@ -84,6 +90,14 @@ function openAdd() {
 async function submitAdd() {
   if (!form.judul.trim() || !form.penyelenggara.trim() || !form.deskripsi.trim()) {
     toast.error('Judul, penyelenggara, dan deskripsi wajib diisi.')
+    return
+  }
+  if (
+    !form.bank_name.trim() ||
+    !form.bank_account_number.trim() ||
+    !form.bank_account_holder_name.trim()
+  ) {
+    toast.error('Nama bank, nomor rekening, dan nama pemilik rekening wajib diisi.')
     return
   }
   adding.value = true
@@ -114,6 +128,9 @@ const editForm = reactive({
   lokasi: '',
   tanggal_mulai: '',
   jumlah_peserta: null as number | null,
+  bank_name: '',
+  bank_account_number: '',
+  bank_account_holder_name: '',
 })
 
 function openDetail(row: AdminPelatihan) {
@@ -130,11 +147,22 @@ function enterEdit() {
   editForm.lokasi = current.value.lokasi ?? ''
   editForm.tanggal_mulai = current.value.tanggal_mulai?.slice(0, 10) ?? ''
   editForm.jumlah_peserta = current.value.jumlah_peserta
+  editForm.bank_name = current.value.bank_name ?? ''
+  editForm.bank_account_number = current.value.bank_account_number ?? ''
+  editForm.bank_account_holder_name = current.value.bank_account_holder_name ?? ''
   editMode.value = true
 }
 
 async function saveEdit() {
   if (!current.value) return
+  if (
+    !editForm.bank_name.trim() ||
+    !editForm.bank_account_number.trim() ||
+    !editForm.bank_account_holder_name.trim()
+  ) {
+    toast.error('Nama bank, nomor rekening, dan nama pemilik rekening wajib diisi.')
+    return
+  }
   saving.value = true
   try {
     const updated = await pelatihanApi.update(current.value.id, {
@@ -144,6 +172,9 @@ async function saveEdit() {
       lokasi: editForm.lokasi || null,
       tanggal_mulai: editForm.tanggal_mulai || null,
       jumlah_peserta: editForm.jumlah_peserta,
+      bank_name: editForm.bank_name,
+      bank_account_number: editForm.bank_account_number,
+      bank_account_holder_name: editForm.bank_account_holder_name,
     })
     current.value = updated
     editMode.value = false
@@ -316,6 +347,35 @@ const isLocked = computed(
             />
           </div>
         </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Nama Bank</label>
+            <input
+              v-model="form.bank_name"
+              type="text"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Nomor Rekening</label>
+            <input
+              v-model="form.bank_account_number"
+              type="text"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-sm font-medium text-slate-700">Nama Pemilik Rekening</label>
+            <input
+              v-model="form.bank_account_holder_name"
+              type="text"
+              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+        </div>
       </form>
       <template #footer>
         <BaseButton variant="ghost" :disabled="adding" @click="addOpen = false">Batalkan</BaseButton>
@@ -341,6 +401,14 @@ const isLocked = computed(
               <dd>{{ current.created_by_role === 'admin' ? 'Admin' : 'Pengguna' }}</dd>
             </div>
             <div><dt class="text-slate-500">Status</dt><dd><StatusBadge :status="current.status" /></dd></div>
+            <div class="sm:col-span-2">
+              <dt class="mb-1 text-slate-500">Rekening Perusahaan</dt>
+              <dd v-if="current.bank_name || current.bank_account_number">
+                {{ current.bank_name ?? '-' }} — {{ current.bank_account_number ?? '-' }}
+                a.n. {{ current.bank_account_holder_name ?? '-' }}
+              </dd>
+              <dd v-else class="text-slate-400">Belum diisi</dd>
+            </div>
           </dl>
         </template>
 
@@ -370,6 +438,20 @@ const isLocked = computed(
             <div>
               <label class="mb-1 block font-medium text-slate-700">Jumlah Peserta</label>
               <input v-model.number="editForm.jumlah_peserta" type="number" min="0" class="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </div>
+          </div>
+          <div class="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label class="mb-1 block font-medium text-slate-700">Nama Bank</label>
+              <input v-model="editForm.bank_name" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </div>
+            <div>
+              <label class="mb-1 block font-medium text-slate-700">Nomor Rekening</label>
+              <input v-model="editForm.bank_account_number" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2" />
+            </div>
+            <div>
+              <label class="mb-1 block font-medium text-slate-700">Nama Pemilik Rekening</label>
+              <input v-model="editForm.bank_account_holder_name" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2" />
             </div>
           </div>
         </template>

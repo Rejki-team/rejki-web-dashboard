@@ -97,6 +97,51 @@ describe('composables/useServerTable', () => {
     expect(api.data.value).toHaveLength(0)
   })
 
+  it('setFilter2 menambahkan param filterParam2 & reset page (tanpa mengganggu status)', async () => {
+    mockList([], 0)
+    const { api } = runTable({ endpoint: '/x/admin', filterParam2: 'report_type' })
+    await nextTick()
+    api.setStatus('pending')
+    await nextTick()
+    api.setFilter2('laporkan_iklan')
+    await nextTick()
+    const lastCall = vi.mocked(http.get).mock.calls.at(-1)
+    expect(lastCall?.[1]?.params).toMatchObject({
+      status: 'pending',
+      report_type: 'laporkan_iklan',
+    })
+    expect(api.pagination.page).toBe(1)
+  })
+
+  it('filter2 tidak terkirim ke query bila filterParam2 tidak diset', async () => {
+    mockList([], 0)
+    const { api } = runTable({ endpoint: '/x/admin' })
+    await nextTick()
+    api.filter2.value = 'sesuatu'
+    api.setStatus('pending')
+    await nextTick()
+    const lastCall = vi.mocked(http.get).mock.calls.at(-1)
+    expect(lastCall?.[1]?.params).not.toHaveProperty('sesuatu')
+    expect(Object.keys(lastCall?.[1]?.params ?? {})).not.toContain('undefined')
+  })
+
+  it('exportCsv menyertakan filterParam2 bila diset', async () => {
+    mockList([], 0)
+    const { api } = runTable({
+      endpoint: '/x/admin',
+      exportEndpoint: '/x/admin/export.csv',
+      filterParam2: 'report_type',
+    })
+    await nextTick()
+    api.filter2.value = 'pelaporan_masalah'
+    await api.exportCsv()
+    expect(downloadCsv).toHaveBeenCalledWith(
+      '/x/admin/export.csv',
+      expect.objectContaining({ report_type: 'pelaporan_masalah' }),
+      'export.csv',
+    )
+  })
+
   it('exportCsv memanggil downloadCsv dengan filter aktif', async () => {
     mockList([], 0)
     const { api } = runTable({

@@ -5,9 +5,9 @@ import { makeJwt } from '@/test/helpers'
 describe('utils/jwt', () => {
   describe('decodeClaims', () => {
     it('mendekode klaim dari token valid', () => {
-      const token = makeJwt({ role: 'admin', email: 'a@b.id' })
+      const token = makeJwt({ role: 'super_admin', email: 'a@b.id' })
       const claims = decodeClaims(token)
-      expect(claims?.role).toBe('admin')
+      expect(claims?.role).toBe('super_admin')
       expect(claims?.email).toBe('a@b.id')
     })
 

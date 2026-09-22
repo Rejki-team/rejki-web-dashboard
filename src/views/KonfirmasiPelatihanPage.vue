@@ -2,10 +2,8 @@
 // Halaman Konfirmasi Pelatihan (Task 8.1–8.3).
 // Tabel enrollment + ikon Mata → detail + Tolak/Terima (alasan wajib, terkunci setelah verifikasi).
 //
-// CATATAN GROUNDED: backend admin_enrollment_detail mengembalikan EnrollmentResponse yang
-// hanya memuat `bukti_transfer_object_key` (BUKAN presigned read URL). Maka bukti transfer
-// ditampilkan sebagai referensi object key — tidak ada URL gambar yang dapat dirender langsung
-// (tidak mengada-ada). Bila backend kelak menambah presigned read URL, ganti ke <PopupFoto>.
+// Bukti transfer dirender sebagai gambar nyata via <PopupFoto> memakai
+// `bukti_transfer_read_url` (presigned, F-10 P3.1) dari endpoint admin detail.
 import { ref, computed } from 'vue'
 import { useServerTable } from '@/composables/useServerTable'
 import { pelatihanApi } from '@/api/pelatihanApi'
@@ -22,8 +20,10 @@ import BaseIcon from '@/components/ui/BaseIcon.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ExportCsvButton from '@/components/ui/ExportCsvButton.vue'
 import ModalConfirm from '@/components/ui/ModalConfirm.vue'
+import PopupFoto from '@/components/ui/PopupFoto.vue'
 
 const toast = useToast()
+const photoOpen = ref(false)
 
 const table = useServerTable<AdminEnrollment>({
   endpoint: pelatihanApi.enrollmentListEndpoint,
@@ -159,9 +159,18 @@ const isLocked = computed(
             <dd><StatusBadge :status="current.status" /></dd>
           </div>
           <div class="sm:col-span-2">
-            <dt class="text-slate-500">Bukti Transfer (object key)</dt>
-            <dd class="break-all font-mono text-xs">
-              {{ current.bukti_transfer_object_key ?? 'Tidak ada' }}
+            <dt class="mb-1 text-slate-500">Bukti Transfer</dt>
+            <dd>
+              <BaseButton
+                v-if="current.bukti_transfer_read_url"
+                variant="ghost"
+                size="sm"
+                @click="photoOpen = true"
+              >
+                <BaseIcon name="photo" :size="16" />
+                Lihat Bukti Transfer
+              </BaseButton>
+              <span v-else class="text-xs text-slate-400">Tidak ada bukti.</span>
             </dd>
           </div>
           <div v-if="current.review_note" class="sm:col-span-2">
@@ -190,6 +199,13 @@ const isLocked = computed(
       :reason-min-length="1"
       :loading="reviewing"
       @confirm="confirmReview"
+    />
+
+    <PopupFoto
+      v-if="current?.bukti_transfer_read_url"
+      v-model:open="photoOpen"
+      :urls="[current.bukti_transfer_read_url]"
+      title="Bukti Transfer"
     />
   </div>
 </template>

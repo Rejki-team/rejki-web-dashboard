@@ -22,6 +22,7 @@ function fakeRow(overrides: Partial<AdminEnrollment> = {}): AdminEnrollment {
     pelatihan_id: '22222222-2222-4222-8222-222222222222',
     user_id: '33333333-3333-4333-8333-333333333333',
     bukti_transfer_object_key: 'bukti/obj.key',
+    bukti_transfer_read_url: null,
     status: 'pending',
     reviewed_by: null, review_note: null,
     created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',

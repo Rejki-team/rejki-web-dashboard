@@ -47,9 +47,14 @@ describe('api/pelatihanApi', () => {
     vi.mocked(http.post).mockResolvedValue(env({ id: '1' }))
     vi.mocked(http.patch).mockResolvedValue(env({ id: '1' }))
     vi.mocked(http.delete).mockResolvedValue(env(null))
-    await pelatihanApi.create({ judul: 'J', penyelenggara: 'P', deskripsi: 'D' })
+    const rekening = {
+      bank_name: 'BCA',
+      bank_account_number: '1234567890',
+      bank_account_holder_name: 'PT Rejki',
+    }
+    await pelatihanApi.create({ judul: 'J', penyelenggara: 'P', deskripsi: 'D', ...rekening })
     expect(http.post).toHaveBeenCalledWith('/pelatihan/admin/pelatihan', expect.any(Object))
-    await pelatihanApi.update('1', { judul: 'J', penyelenggara: 'P', deskripsi: 'D' })
+    await pelatihanApi.update('1', { judul: 'J', penyelenggara: 'P', deskripsi: 'D', ...rekening })
     expect(http.patch).toHaveBeenCalledWith('/pelatihan/admin/pelatihan/1', expect.any(Object))
     await pelatihanApi.cancel('1')
     expect(http.delete).toHaveBeenCalledWith('/pelatihan/admin/pelatihan/1')

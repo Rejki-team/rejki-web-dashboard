@@ -17,13 +17,25 @@ const props = withDefaults(
     columns: TableColumn[]
     searchPlaceholder?: string
     filterOptions?: FilterOption[]
+    /** Dropdown filter KEDUA (opsional), berdampingan dengan `filterOptions` — butuh
+     * `filterParam2` di `useServerTable` agar benar-benar terkirim ke query. */
+    filter2Options?: FilterOption[]
+    filter2Label?: string
     sortOptions?: SortOption[]
     /** Aktifkan kolom checkbox bulk-select. */
     selectable?: boolean
     /** Set id terpilih (v-model). */
     selected?: string[]
   }>(),
-  { searchPlaceholder: 'Cari...', filterOptions: () => [], sortOptions: () => [], selectable: false, selected: () => [] },
+  {
+    searchPlaceholder: 'Cari...',
+    filterOptions: () => [],
+    filter2Options: () => [],
+    filter2Label: 'Filter',
+    sortOptions: () => [],
+    selectable: false,
+    selected: () => [],
+  },
 )
 
 const emit = defineEmits<{ 'update:selected': [string[]] }>()
@@ -92,6 +104,16 @@ const pageNumbers = computed(() => {
         @change="t.setStatus(($event.target as HTMLSelectElement).value)"
       >
         <option v-for="f in filterOptions" :key="f.value" :value="f.value">{{ f.label }}</option>
+      </select>
+
+      <select
+        v-if="filter2Options?.length"
+        :value="t.filter2.value"
+        class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500"
+        :aria-label="filter2Label"
+        @change="t.setFilter2(($event.target as HTMLSelectElement).value)"
+      >
+        <option v-for="f in filter2Options" :key="f.value" :value="f.value">{{ f.label }}</option>
       </select>
 
       <select

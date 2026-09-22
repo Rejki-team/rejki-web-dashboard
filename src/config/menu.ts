@@ -1,6 +1,6 @@
 // Definisi menu sidebar (Task 3.2) — terpusat (Zero Hardcoded tersebar).
 // Selaras User Story: Iklan Pelatihan punya 3 sub-menu.
-import type { IconName } from '@/components/ui/BaseIcon.vue'
+import type { IconName } from '@/components/ui/iconNames'
 
 export interface MenuChild {
   label: string

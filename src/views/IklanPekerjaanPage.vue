@@ -1,15 +1,24 @@
 <script setup lang="ts">
 // Halaman Iklan Pekerjaan (Task 6.1–6.2). Pola sama dengan Iklan Pekerja.
-// Kolom mengikuti AdminIklanDocResponse nyata (ID, Judul, Perusahaan, Deskripsi, Lokasi,
-// Foto, Status). Field upah/jam tidak ada di DTO admin backend → tidak ditampilkan
-// (grounded; tidak mengada-ada).
+// Kolom mengikuti AdminIklanPekerjaanResponse nyata (ID, Judul, Perusahaan, Deskripsi,
+// Lokasi, Upah, Jenis, Jam Kerja, Foto, Status) — F-5, Kelompok 6 P8.1.
 import { ref, computed } from 'vue'
 import { useServerTable } from '@/composables/useServerTable'
 import { useSuspendIklan } from '@/composables/useSuspendIklan'
 import { iklanApi } from '@/api/iklanApi'
 import type { AdminIklanPekerjaan } from '@/types/domain'
 import type { TableColumn, FilterOption, SortOption } from '@/types/table'
-import { shortId, truncate } from '@/utils/format'
+import { formatRange, shortId, truncate } from '@/utils/format'
+
+const TIPE_LABELS: Record<string, string> = {
+  full_time: 'Penuh Waktu',
+  part_time: 'Paruh Waktu',
+  freelance: 'Lepas',
+  internship: 'Magang',
+}
+function formatTipe(tipe: string): string {
+  return TIPE_LABELS[tipe] ?? tipe.replace(/_/g, ' ')
+}
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ServerTable from '@/components/ui/ServerTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -34,6 +43,9 @@ const columns: TableColumn[] = [
   { key: 'perusahaan', label: 'Perusahaan', slot: true, hideOnMobile: true },
   { key: 'deskripsi', label: 'Deskripsi', slot: true, hideOnMobile: true },
   { key: 'lokasi', label: 'Lokasi', slot: true, hideOnMobile: true },
+  { key: 'upah', label: 'Upah', slot: true, hideOnMobile: true },
+  { key: 'tipe', label: 'Jenis Pekerjaan', slot: true, hideOnMobile: true },
+  { key: 'jam_kerja', label: 'Jam Kerja', slot: true, hideOnMobile: true },
   { key: 'foto', label: 'Foto', slot: true, align: 'center' },
   { key: 'status', label: 'Status', slot: true },
 ]
@@ -111,6 +123,15 @@ const suspendCount = computed(() => suspendTargets.value.length)
       </template>
       <template #cell-lokasi="{ row }">
         {{ truncate((row as AdminIklanPekerjaan).lokasi, 30) }}
+      </template>
+      <template #cell-upah="{ row }">
+        {{ formatRange((row as AdminIklanPekerjaan).gaji_min, (row as AdminIklanPekerjaan).gaji_max) }}
+      </template>
+      <template #cell-tipe="{ row }">
+        {{ formatTipe((row as AdminIklanPekerjaan).tipe) }}
+      </template>
+      <template #cell-jam_kerja="{ row }">
+        {{ (row as AdminIklanPekerjaan).jam_kerja ?? '-' }}
       </template>
       <template #cell-foto="{ row }">
         <button
