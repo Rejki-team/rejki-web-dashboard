@@ -3,31 +3,7 @@
 // Path SVG (stroke, 24x24, Heroicons-style) terpusat di sini → Zero Hardcoded SVG tersebar.
 
 import { computed } from 'vue'
-
-export type IconName =
-  | 'eye'
-  | 'pencil'
-  | 'trash'
-  | 'menu'
-  | 'close'
-  | 'search'
-  | 'chevron-down'
-  | 'chevron-left'
-  | 'chevron-right'
-  | 'download'
-  | 'logout'
-  | 'check'
-  | 'x-mark'
-  | 'plus'
-  | 'lock'
-  | 'photo'
-  | 'user'
-  | 'briefcase'
-  | 'academic'
-  | 'gift'
-  | 'users'
-  | 'support'
-  | 'megaphone'
+import type { IconName } from './iconNames'
 
 const props = withDefaults(defineProps<{ name: IconName; size?: number }>(), { size: 20 })
 

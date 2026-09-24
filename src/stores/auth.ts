@@ -14,6 +14,10 @@ import { isTokenExpired, roleFromToken } from '@/utils/jwt'
 import { normalizeError } from '@/api/errors'
 import type { UserProfile } from '@/types/auth'
 
+/** Role admin-tier riil dari backend (rank ≥ `moderator`, lihat auth-service-client::Role::rank()).
+ * Backend TIDAK PERNAH mengeluarkan role literal "admin" — audit Kelompok 5 2026-09-21 Finding #1. */
+const ADMIN_ROLES = ['moderator', 'admin_iklan', 'admin_user', 'executive', 'super_admin']
+
 interface AuthState {
   accessToken: string | null
   refreshToken: string | null
@@ -34,7 +38,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (s): boolean =>
       !!s.accessToken && !isTokenExpired(s.accessToken, 0),
     isAdmin(): boolean {
-      return this.role === 'admin'
+      return !!this.role && ADMIN_ROLES.includes(this.role)
     },
   },
 

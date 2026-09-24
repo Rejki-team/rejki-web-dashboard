@@ -13,12 +13,26 @@ export interface AdminIklanPekerja {
   lokasi: string | null
   tarif_min: number | null
   tarif_max: number | null
+  /** Jam kerja (F-7, Kelompok 6 P7.2). */
+  jam_kerja: string | null
+  /** Nomor kontak pekerja (F-7, Kelompok 6 P7.3) — kolom "Cara Hubungi" merender
+   * field ini, BUKAN `lokasi` (label lama salah kaprah). */
+  phone_number: string | null
   foto_urls: string[]
   is_active: boolean
   moderation_status: ModerationStatus
   deleted_at: string | null
   created_at: string
   updated_at: string
+}
+
+/** Detail iklan pekerja untuk pop-up admin (F-27b) — sama seperti `AdminIklanPekerja`
+ * ditambah indikator dokumen sensitif poster (NIK/KTP/Selfie), di-resolve backend
+ * lewat `UserClient` ke user-service. Endpoint ini KHUSUS vertikal Iklan Pekerja. */
+export interface AdminIklanPekerjaDetail extends AdminIklanPekerja {
+  has_nik: boolean
+  has_ktp: boolean
+  has_selfie: boolean
 }
 
 // ── Iklan Pekerjaan (AdminIklanDocResponse) ─────────────────────────────────────
@@ -29,6 +43,11 @@ export interface AdminIklanPekerjaan {
   perusahaan: string
   deskripsi: string
   lokasi: string | null
+  gaji_min: number | null
+  gaji_max: number | null
+  tipe: string
+  /** Jam kerja (F-5, Kelompok 6 P7.1). */
+  jam_kerja: string | null
   foto_urls: string[]
   is_active: boolean
   moderation_status: ModerationStatus
@@ -79,6 +98,9 @@ export interface AdminPelatihan {
   deleted_at: string | null
   created_at: string
   updated_at: string
+  bank_name: string | null
+  bank_account_number: string | null
+  bank_account_holder_name: string | null
 }
 
 export type EnrollmentStatus = 'pending' | 'approved' | 'rejected'
@@ -93,6 +115,9 @@ export interface AdminEnrollment {
   review_note: string | null
   created_at: string
   updated_at: string
+  // Presigned URL untuk melihat bukti transfer (F-10) — hanya terisi dari
+  // endpoint admin detail (`enrollmentDetail`), null di endpoint lain.
+  bukti_transfer_read_url: string | null
 }
 
 export type BadgeStatus = 'pending' | 'approved' | 'rejected'
@@ -108,6 +133,9 @@ export interface AdminBadge {
   review_note: string | null
   created_at: string
   updated_at: string
+  // Presigned URL untuk melihat sertifikat (F-10) — hanya terisi dari
+  // endpoint admin detail (`badgeDetail`), null di endpoint lain.
+  sertifikat_read_url: string | null
 }
 
 // ── KYC (AdminKycListItemDocResponse / AdminKycDetailDocResponse) ────────────────
@@ -138,23 +166,48 @@ export interface AdminKycDetail extends AdminKycListItem {
 
 // ── Content Reports (ReportDocResponse / ReportDetailDocResponse) ────────────────
 export type ReportStatus = 'pending' | 'in_review' | 'rejected' | 'resolved'
+// Jenis Laporan — jalur pembuatan aduan (PRD §6.10, keputusan final B-8). Kelompok 4 Phase 1.
+export type ReportType = 'laporkan_iklan' | 'pelaporan_masalah'
+
+// Data demografis pelapor (Kelompok 4 P1.3/P2.2) — semua field bisa null (profil pelapor
+// tidak lengkap/tidak ditemukan, degradasi anggun dari backend, BUKAN error).
+export interface ReporterDemographics {
+  education_level: string | null
+  gender: string | null
+  birth_date: string | null
+  address_line: string | null
+  village_name: string | null
+  district_name: string | null
+  regency_name: string | null
+  province_name: string | null
+  country: string | null
+}
 
 export interface AdminReport {
   id: string
   reporter_id: string
-  target_type: string
-  target_id: string
+  report_type: ReportType
+  // Nullable sejak Kelompok 4 Phase 1 — jalur "Pelaporan Masalah" boleh tanpa target (PRD §6.10).
+  target_type: string | null
+  target_id: string | null
   keterangan: string
   evidence_object_key: string | null
   status: ReportStatus
   action_note: string | null
   reviewed_by: string | null
+  due_date: string
+  is_overdue: boolean
   created_at: string
   updated_at: string
+  // Hanya terisi di listing bila backend berhasil enrich (batch, Hazard #5) — absen (bukan
+  // null) bila gagal/tidak tersedia, lihat `#[serde(skip_serializing_if)]` di backend.
+  reporter_demographics?: ReporterDemographics
 }
 
 export interface AdminReportDetail extends AdminReport {
   evidence_read_url: string | null
+  // Selalu ada di detail (berbeda dari listing) — isinya bisa semua null (degradasi anggun).
+  reporter_demographics: ReporterDemographics
 }
 
 // ── Corporate Communication (AdminArticleDocResponse) ────────────────────────────

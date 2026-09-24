@@ -10,7 +10,7 @@ import axios from 'axios'
 import { useServerTable } from '@/composables/useServerTable'
 import { articleApi } from '@/api/articleApi'
 import type { AdminArticle } from '@/types/domain'
-import type { TableColumn, SortOption } from '@/types/table'
+import type { TableColumn, FilterOption, SortOption } from '@/types/table'
 import { formatDateTime, shortId, truncate } from '@/utils/format'
 import { validateEvidenceFile } from '@/utils/upload'
 import { normalizeError } from '@/api/errors'
@@ -27,6 +27,7 @@ const toast = useToast()
 const table = useServerTable<AdminArticle>({
   endpoint: articleApi.listEndpoint,
   csvFilename: 'artikel.csv',
+  filterParam: 'category',
 })
 
 const columns: TableColumn[] = [
@@ -39,10 +40,15 @@ const columns: TableColumn[] = [
   { key: 'aksi', label: 'Aksi', slot: true, align: 'center' },
 ]
 
-// Backend kategori saat ini hanya "informasi"; sort_dir mengurutkan kategori.
 const sortOptions: SortOption[] = [
   { label: 'Kategori A→Z', sortBy: 'category', sortDir: 'asc' },
   { label: 'Kategori Z→A', sortBy: 'category', sortDir: 'desc' },
+]
+
+const filterOptions: FilterOption[] = [
+  { label: 'Semua Kategori', value: '' },
+  { label: 'Informasi', value: 'informasi' },
+  { label: 'Tips & Trick', value: 'tips_trick' },
 ]
 
 // ── Buat artikel ──
@@ -179,6 +185,14 @@ async function uploadToPresigned(url: string, file: File): Promise<void> {
   await axios.put(url, file, { headers: { 'Content-Type': file.type } })
 }
 
+const categoryLabels: Record<string, string> = {
+  informasi: 'Informasi',
+  tips_trick: 'Tips & Trick',
+}
+function categoryLabel(category: string): string {
+  return categoryLabels[category] ?? category
+}
+
 const createdInfo = computed(() => (current.value ? formatDateTime(current.value.created_at) : ''))
 const updatedInfo = computed(() => (current.value ? formatDateTime(current.value.updated_at) : ''))
 
@@ -203,6 +217,7 @@ const deleteMessage = computed(() =>
     <ServerTable
       :table="table"
       :columns="columns"
+      :filter-options="filterOptions"
       :sort-options="sortOptions"
       search-placeholder="Cari judul..."
     >
@@ -213,7 +228,7 @@ const deleteMessage = computed(() =>
         <span class="font-mono text-xs">{{ shortId((row as AdminArticle).author_id) }}</span>
       </template>
       <template #cell-category="{ row }">
-        <span class="capitalize">{{ (row as AdminArticle).category }}</span>
+        <span>{{ categoryLabel((row as AdminArticle).category) }}</span>
       </template>
       <template #cell-title="{ row }">
         <span class="font-medium text-slate-800">{{ (row as AdminArticle).title }}</span>
@@ -278,6 +293,7 @@ const deleteMessage = computed(() =>
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
             <option value="informasi">Informasi</option>
+            <option value="tips_trick">Tips & Trick</option>
           </select>
         </div>
         <div>
@@ -332,6 +348,7 @@ const deleteMessage = computed(() =>
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
           >
             <option value="informasi">Informasi</option>
+            <option value="tips_trick">Tips & Trick</option>
           </select>
         </div>
       </div>

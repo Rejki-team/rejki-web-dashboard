@@ -31,6 +31,7 @@ function fakeRow(overrides: Partial<AdminPelatihan> = {}): AdminPelatihan {
     lokasi: 'Surabaya', harga: null, tanggal_mulai: '2026-07-01T00:00:00Z', tanggal_selesai: null,
     foto_urls: [], is_active: true, status: 'approved', created_by_role: 'admin',
     jumlah_peserta: 20, deleted_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+    bank_name: 'BCA', bank_account_number: '1234567890', bank_account_holder_name: 'BLK',
     ...overrides,
   }
 }

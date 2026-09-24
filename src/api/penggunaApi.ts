@@ -4,6 +4,7 @@
 //   GET  /users/admin/kyc/{id}                    (detail; NIK ter-mask)
 //   POST /users/admin/kyc/{id}/review             (approve/reject)
 //   GET  /users/admin/kyc/{id}/documents/{kind}   (presigned read; TERAUDIT)
+//   GET  /users/admin/kyc/{id}/nik                (buka NIK penuh; TERAUDIT — F-26/F-27a)
 //   POST /auth/admin/users/suspend                (bulk suspend; partial-success)
 //   POST /auth/admin/users/{id}/suspend/evidence  (presigned bukti)
 import { http } from './http'
@@ -45,6 +46,12 @@ export const penggunaApi = {
       `${KYC_BASE}/${id}/documents/${kind}`,
     )
     return data.data.presigned_url
+  },
+
+  /** Buka NIK penuh (click-to-view). Memicu audit `nik_read_issued` di backend. */
+  async revealNik(id: string): Promise<string> {
+    const { data } = await http.get<ApiResponse<{ nik: string }>>(`${KYC_BASE}/${id}/nik`)
+    return data.data.nik
   },
 
   /** Minta presigned URL untuk unggah bukti suspend (per user). */

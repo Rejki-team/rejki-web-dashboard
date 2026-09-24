@@ -18,7 +18,7 @@ const loggingOut = ref(false)
 const displayName = computed(
   () => auth.user?.full_name || auth.user?.username || 'Administrator',
 )
-const roleLabel = computed(() => (auth.role === 'admin' ? 'Administrator' : (auth.role ?? '-')))
+const roleLabel = computed(() => (auth.isAdmin ? 'Administrator' : (auth.role ?? '-')))
 const initials = computed(() =>
   displayName.value
     .split(' ')

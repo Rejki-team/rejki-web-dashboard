@@ -1,7 +1,8 @@
 // Composable tabel server-side (Task 4.1) — abstraksi reuse untuk 10+ halaman admin.
 //
 // GROUNDED pada kontrak backend:
-//  - Query: limit, offset, q (search), status (filter), sort_by, sort_dir (asc|desc).
+//  - Query: limit, offset, q (search), status/filterParam (filter, nama param configurable via
+//    `opts.filterParam`, default `status`), sort_by, sort_dir (asc|desc).
 //  - Respons: ApiResponse<T[]> dengan meta PaginatedMeta { page, per_page, total, total_pages }.
 //
 // Mengembalikan state reaktif + aksi. Setiap perubahan page/search/sort/filter memicu fetch
@@ -23,6 +24,11 @@ export interface ServerTableOptions {
   perPage?: number
   /** Status default (mis. KYC default `pending`). */
   defaultStatus?: string
+  /** Nama query param untuk dropdown filter (default `status`; mis. `category` untuk artikel). */
+  filterParam?: string
+  /** Nama query param untuk dropdown filter KEDUA (opsional) — mis. `report_type` di
+   * Pengelolaan Dukungan (Jenis Laporan, berdampingan dengan filter Status). */
+  filterParam2?: string
   /** Kolom sort default. */
   defaultSortBy?: string
   defaultSortDir?: 'asc' | 'desc'
@@ -46,6 +52,8 @@ export interface UseServerTable<T> {
   pagination: PaginationState
   search: Ref<string>
   status: Ref<string>
+  /** State filter dropdown KEDUA (opsional) — kosong string bila tidak dipakai halaman ini. */
+  filter2: Ref<string>
   sortBy: Ref<string>
   sortDir: Ref<'asc' | 'desc'>
   isEmpty: Ref<boolean>
@@ -53,6 +61,7 @@ export interface UseServerTable<T> {
   nextPage: () => void
   prevPage: () => void
   setStatus: (s: string) => void
+  setFilter2: (v: string) => void
   setSort: (by: string, dir: 'asc' | 'desc') => void
   refresh: () => Promise<void>
   exportCsv: () => Promise<void>
@@ -60,6 +69,8 @@ export interface UseServerTable<T> {
 
 export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
   const perPage = opts.perPage ?? 20
+  const filterParam = opts.filterParam ?? 'status'
+  const filterParam2 = opts.filterParam2
 
   const data = ref<T[]>([]) as Ref<T[]>
   const loading = ref(false)
@@ -68,6 +79,7 @@ export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
 
   const search = ref('')
   const status = ref(opts.defaultStatus ?? '')
+  const filter2 = ref('')
   const sortBy = ref(opts.defaultSortBy ?? '')
   const sortDir = ref<'asc' | 'desc'>(opts.defaultSortDir ?? 'desc')
 
@@ -89,7 +101,8 @@ export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
       offset: String((pagination.page - 1) * pagination.perPage),
     }
     if (search.value.trim()) params.q = search.value.trim()
-    if (status.value) params.status = status.value
+    if (status.value) params[filterParam] = status.value
+    if (filterParam2 && filter2.value) params[filterParam2] = filter2.value
     if (sortBy.value) params.sort_by = sortBy.value
     if (sortDir.value) params.sort_dir = sortDir.value
     return params
@@ -150,6 +163,11 @@ export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
     pagination.page = 1
     void fetchData()
   }
+  function setFilter2(v: string) {
+    filter2.value = v
+    pagination.page = 1
+    void fetchData()
+  }
   function setSort(by: string, dir: 'asc' | 'desc') {
     sortBy.value = by
     sortDir.value = dir
@@ -164,8 +182,9 @@ export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
     if (!opts.exportEndpoint) return
     const params: Record<string, string | undefined> = {
       q: search.value.trim() || undefined,
-      status: status.value || undefined,
+      [filterParam]: status.value || undefined,
     }
+    if (filterParam2) params[filterParam2] = filter2.value || undefined
     await downloadCsv(opts.exportEndpoint, params, opts.csvFilename ?? 'export.csv')
   }
 
@@ -182,6 +201,7 @@ export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
     pagination,
     search,
     status,
+    filter2,
     sortBy,
     sortDir,
     isEmpty,
@@ -189,6 +209,7 @@ export function useServerTable<T>(opts: ServerTableOptions): UseServerTable<T> {
     nextPage,
     prevPage,
     setStatus,
+    setFilter2,
     setSort,
     refresh,
     exportCsv,

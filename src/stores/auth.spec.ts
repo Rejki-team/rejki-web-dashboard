@@ -17,7 +17,10 @@ import { authApi } from '@/api/authApi'
 import { installAuthBridge } from '@/api/http'
 import { useAuthStore } from './auth'
 
-const adminToken = makeJwt({ role: 'admin' })
+// Role riil dari backend (auth-service-client::Role) — bukan "admin" (tidak pernah ada di
+// dunia nyata, lihat audit Kelompok 5 2026-09-21 Finding #1/#3).
+const adminToken = makeJwt({ role: 'super_admin' })
+const moderatorToken = makeJwt({ role: 'moderator' })
 const userToken = makeJwt({ role: 'user' })
 
 describe('stores/auth', () => {
@@ -33,7 +36,7 @@ describe('stores/auth', () => {
     const auth = useAuthStore()
     auth.bootstrap()
     expect(installAuthBridge).toHaveBeenCalled()
-    expect(auth.role).toBe('admin')
+    expect(auth.role).toBe('super_admin')
   })
 
   it('login menyimpan token, role, & memuat profil', async () => {
@@ -50,7 +53,7 @@ describe('stores/auth', () => {
       avatar: null,
       bio: null,
       phone: null,
-      role: 'admin',
+      role: 'super_admin',
       nik_masked: null,
       kyc_status: null,
     })
@@ -61,6 +64,29 @@ describe('stores/auth', () => {
     expect(auth.isAuthenticated).toBe(true)
     expect(auth.user?.username).toBe('admin')
     expect(localStorage.getItem('rejki.access_token')).toBe(adminToken)
+  })
+
+  it('isAdmin true untuk role admin-tier lain (moderator, bukan hanya super_admin)', async () => {
+    vi.mocked(authApi.adminLogin).mockResolvedValue({
+      access_token: moderatorToken,
+      refresh_token: 'ref',
+      token_type: 'Bearer',
+      expires_in: 900,
+    })
+    vi.mocked(authApi.me).mockResolvedValue({
+      id: '2',
+      username: 'mod',
+      full_name: null,
+      avatar: null,
+      bio: null,
+      phone: null,
+      role: 'moderator',
+      nik_masked: null,
+      kyc_status: null,
+    })
+    const auth = useAuthStore()
+    await auth.login('mod@rejki.id', 'pass')
+    expect(auth.isAdmin).toBe(true)
   })
 
   it('login membersihkan sesi & melempar pada galat', async () => {
@@ -94,7 +120,7 @@ describe('stores/auth', () => {
   })
 
   it('refresh memperbarui token & mengembalikan token baru', async () => {
-    const newToken = makeJwt({ role: 'admin' })
+    const newToken = makeJwt({ role: 'super_admin' })
     vi.mocked(authApi.refresh).mockResolvedValue({
       access_token: newToken,
       refresh_token: 'ref2',

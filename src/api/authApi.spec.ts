@@ -39,7 +39,9 @@ describe('api/authApi', () => {
   })
 
   it('me GET /users/me', async () => {
-    vi.mocked(http.get).mockResolvedValue(env({ id: '1', username: 'admin', role: 'admin' }))
+    vi.mocked(http.get).mockResolvedValue(
+      env({ id: '1', username: 'admin', role: 'super_admin' }),
+    )
     const res = await authApi.me()
     expect(http.get).toHaveBeenCalledWith('/users/me')
     expect(res.username).toBe('admin')

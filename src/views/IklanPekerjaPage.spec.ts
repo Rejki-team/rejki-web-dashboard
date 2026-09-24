@@ -22,6 +22,7 @@ function fakeRow(overrides: Partial<AdminIklanPekerja> = {}): AdminIklanPekerja 
     poster_id: '22222222-2222-4222-8222-222222222222',
     nama: 'Budi Tukang Las', keahlian: ['las', 'cat'], deskripsi: 'x',
     lokasi: 'Jakarta', tarif_min: 50_000, tarif_max: 100_000,
+    jam_kerja: null, phone_number: null,
     foto_urls: [], is_active: true, moderation_status: 'pending',
     deleted_at: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-06-01T00:00:00Z',
     ...overrides,
@@ -72,6 +73,23 @@ describe('IklanPekerjaPage', () => {
     vi.mocked(useServerTable).mockReturnValue(emptyTable as never)
     const wrapper = mount(IklanPekerjaPage, { global: { stubs: pageStubs } })
     expect(wrapper.text()).toContain('Tidak ada data')
+  })
+
+  it('kolom Cara Hubungi merender phone_number, BUKAN lokasi (F-7, Kelompok 6 P8.2)', () => {
+    const row = fakeRow({ lokasi: 'Jakarta Pusat', phone_number: '081234567890' })
+    const t = { ...emptyTable, data: ref([row]), isEmpty: ref(false) }
+    vi.mocked(useServerTable).mockReturnValue(t as never)
+    const wrapper = mount(IklanPekerjaPage, { global: { stubs: pageStubs } })
+    expect(wrapper.text()).toContain('081234567890')
+    expect(wrapper.text()).not.toContain('Jakarta Pusat')
+  })
+
+  it('merender kolom Jam Kerja (F-7, Kelompok 6 P7.2/P8.2)', () => {
+    const row = fakeRow({ jam_kerja: '08:00-16:00' })
+    const t = { ...emptyTable, data: ref([row]), isEmpty: ref(false) }
+    vi.mocked(useServerTable).mockReturnValue(t as never)
+    const wrapper = mount(IklanPekerjaPage, { global: { stubs: pageStubs } })
+    expect(wrapper.text()).toContain('08:00-16:00')
   })
 
   it('menampilkan foto button untuk baris dengan foto_urls', () => {

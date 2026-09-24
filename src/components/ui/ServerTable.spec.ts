@@ -100,4 +100,36 @@ describe('ServerTable', () => {
     await w.find('input[type="search"]').setValue('cari')
     expect(t.search.value).toBe('cari')
   })
+
+  it('filter2Options merender dropdown kedua & memanggil setFilter2', async () => {
+    const setFilter2 = vi.fn()
+    const t = fakeTable([{ id: '1', nama: 'A' }], { filter2: ref(''), setFilter2 })
+    const w = mount(ServerTable, {
+      props: {
+        table: t,
+        columns,
+        filterOptions: [{ label: 'Semua Status', value: '' }],
+        filter2Options: [
+          { label: 'Semua Jenis', value: '' },
+          { label: 'Laporkan Iklan', value: 'laporkan_iklan' },
+        ],
+      },
+    })
+    const selects = w.findAll('select')
+    expect(selects.length).toBe(2)
+    await selects[1].setValue('laporkan_iklan')
+    expect(setFilter2).toHaveBeenCalledWith('laporkan_iklan')
+  })
+
+  it('tanpa filter2Options, hanya dropdown status yang tampil', () => {
+    const t = fakeTable([{ id: '1', nama: 'A' }])
+    const w = mount(ServerTable, {
+      props: {
+        table: t,
+        columns,
+        filterOptions: [{ label: 'Semua Status', value: '' }],
+      },
+    })
+    expect(w.findAll('select').length).toBe(1)
+  })
 })

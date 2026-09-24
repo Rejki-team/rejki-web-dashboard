@@ -22,6 +22,7 @@ function fakeRow(overrides: Partial<AdminBadge> = {}): AdminBadge {
     pelatihan_id: '22222222-2222-4222-8222-222222222222',
     user_id: '33333333-3333-4333-8333-333333333333',
     sertifikat_object_key: 'sert/obj.key',
+    sertifikat_read_url: null,
     approved_at: null,
     status: 'pending',
     reviewed_by: null, review_note: null,

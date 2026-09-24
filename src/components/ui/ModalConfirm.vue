@@ -5,6 +5,8 @@
 //  - showPermanent : tampilkan pilihan sementara/permanen (untuk suspend).
 //  - requireEvidence: tampilkan input unggah bukti (file).
 //  - reasonMinLength: validasi panjang alasan (mis. suspend reason min 10).
+//  - initialReason: pre-fill textarea alasan saat dibuka (mis. dari keterangan
+//    aduan — Kelompok 6 P10.2), tetap bisa diedit admin sebelum submit.
 //
 // Emit `confirm` dengan payload { reason, permanent, file } setelah validasi lolos.
 import { ref, computed, watch } from 'vue'
@@ -25,6 +27,7 @@ const props = withDefaults(
     showPermanent?: boolean
     requireEvidence?: boolean
     loading?: boolean
+    initialReason?: string
   }>(),
   {
     confirmLabel: 'Konfirmasi',
@@ -35,6 +38,7 @@ const props = withDefaults(
     showPermanent: false,
     requireEvidence: false,
     loading: false,
+    initialReason: '',
   },
 )
 
@@ -53,7 +57,7 @@ watch(
   () => props.open,
   (v) => {
     if (v) {
-      reason.value = ''
+      reason.value = props.initialReason
       permanent.value = false
       file.value = null
       fileError.value = ''

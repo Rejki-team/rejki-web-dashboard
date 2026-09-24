@@ -24,6 +24,10 @@ function fakeRow(overrides: Partial<AdminIklanPekerjaan> = {}): AdminIklanPekerj
     perusahaan: 'PT Rejki',
     deskripsi: 'Backend developer berpengalaman',
     lokasi: 'Bandung',
+    gaji_min: null,
+    gaji_max: null,
+    tipe: 'full_time',
+    jam_kerja: null,
     foto_urls: [],
     is_active: true,
     moderation_status: 'pending',
@@ -60,6 +64,22 @@ describe('IklanPekerjaanPage', () => {
     expect(w.text()).toContain('Frontend Dev')
     expect(w.text()).toContain('PT ABC')
     expect(w.text()).toContain('Disetujui')
+  })
+
+  it('merender kolom Upah, Jenis Pekerjaan, dan Jam Kerja (F-5, Kelompok 6 P8.1)', () => {
+    const row = fakeRow({
+      gaji_min: 3_000_000,
+      gaji_max: 5_000_000,
+      tipe: 'full_time',
+      jam_kerja: '08:00-17:00',
+    })
+    const t = { ...emptyTable, data: ref([row]), isEmpty: ref(false) }
+    vi.mocked(useServerTable).mockReturnValue(t as never)
+    const w = mount(IklanPekerjaanPage, { global: { stubs: pageStubs } })
+    expect(w.text()).toContain('3.000.000')
+    expect(w.text()).toContain('5.000.000')
+    expect(w.text()).toContain('Penuh Waktu')
+    expect(w.text()).toContain('08:00-17:00')
   })
 
   it('menampilkan foto button bila ada foto', () => {

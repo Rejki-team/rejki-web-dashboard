@@ -1,23 +1,31 @@
 <script setup lang="ts">
 // Halaman Iklan Pekerja (Task 5.1–5.4).
-// Kolom: ID, Nama, Pengalaman (keahlian), Upah (tarif), Cara Hubungi, Foto, Status.
-// Fitur: search, sort status, popup foto, bulk select + suspend, export CSV.
+// Kolom: ID, Nama, Pengalaman (keahlian), Upah (tarif), Jam Kerja, Cara Hubungi
+// (phone_number — F-7, Kelompok 6 P8.2, BUKAN lokasi seperti sebelumnya), Foto, Status, Aksi.
+// Fitur: search, sort status, popup foto, bulk select + suspend, export CSV,
+// popup detail dengan click-to-view NIK/KTP/Selfie poster (F-27b, teraudit di user-service).
 import { ref, computed } from 'vue'
 import { useServerTable } from '@/composables/useServerTable'
 import { useSuspendIklan } from '@/composables/useSuspendIklan'
 import { iklanApi } from '@/api/iklanApi'
-import type { AdminIklanPekerja } from '@/types/domain'
+import type { AdminIklanPekerja, AdminIklanPekerjaDetail } from '@/types/domain'
 import type { TableColumn, FilterOption, SortOption } from '@/types/table'
-import { formatRange, shortId, truncate } from '@/utils/format'
+import { formatRange, shortId } from '@/utils/format'
+import { normalizeError } from '@/api/errors'
+import { useToast } from '@/composables/useToast'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import ServerTable from '@/components/ui/ServerTable.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseIcon from '@/components/ui/BaseIcon.vue'
+import BaseModal from '@/components/ui/BaseModal.vue'
 import ExportCsvButton from '@/components/ui/ExportCsvButton.vue'
 import PopupFoto from '@/components/ui/PopupFoto.vue'
 import ModalConfirm from '@/components/ui/ModalConfirm.vue'
 import BulkSelectActionBar from '@/components/ui/BulkSelectActionBar.vue'
+import MaskedValue from '@/components/ui/MaskedValue.vue'
+
+const toast = useToast()
 
 const table = useServerTable<AdminIklanPekerja>({
   endpoint: iklanApi.listEndpoint('pekerja'),
@@ -32,9 +40,11 @@ const columns: TableColumn[] = [
   { key: 'nama', label: 'Nama', slot: true },
   { key: 'keahlian', label: 'Pengalaman', slot: true, hideOnMobile: true },
   { key: 'tarif', label: 'Upah', slot: true, hideOnMobile: true },
-  { key: 'lokasi', label: 'Cara Hubungi', slot: true, hideOnMobile: true },
+  { key: 'jam_kerja', label: 'Jam Kerja', slot: true, hideOnMobile: true },
+  { key: 'kontak', label: 'Cara Hubungi', slot: true, hideOnMobile: true },
   { key: 'foto', label: 'Foto', slot: true, align: 'center' },
   { key: 'status', label: 'Status', slot: true },
+  { key: 'aksi', label: 'Aksi', slot: true, align: 'center' },
 ]
 
 const filterOptions: FilterOption[] = [
@@ -84,6 +94,38 @@ async function onSuspendConfirm(args: {
 }
 
 const suspendCount = computed(() => suspendTargets.value.length)
+
+// ── Detail (F-27b) ──
+const detailOpen = ref(false)
+const current = ref<AdminIklanPekerjaDetail | null>(null)
+const loadingDetail = ref(false)
+
+async function openDetail(row: AdminIklanPekerja) {
+  detailOpen.value = true
+  loadingDetail.value = true
+  current.value = null
+  try {
+    current.value = await iklanApi.pekerjaDetail(row.id)
+  } catch (err) {
+    toast.error(normalizeError(err).userMessage)
+  } finally {
+    loadingDetail.value = false
+  }
+}
+
+// Fetch data sensitif (audited di user-service) — dipakai MaskedValue.
+function fetchNik(): Promise<string> {
+  if (!current.value) return Promise.reject(new Error('no iklan'))
+  return iklanApi.pekerjaRevealSensitive(current.value.id, 'nik')
+}
+function fetchKtp(): Promise<string> {
+  if (!current.value) return Promise.reject(new Error('no iklan'))
+  return iklanApi.pekerjaRevealSensitive(current.value.id, 'ktp')
+}
+function fetchSelfie(): Promise<string> {
+  if (!current.value) return Promise.reject(new Error('no iklan'))
+  return iklanApi.pekerjaRevealSensitive(current.value.id, 'selfie')
+}
 </script>
 
 <template>
@@ -119,8 +161,12 @@ const suspendCount = computed(() => suspendTargets.value.length)
         {{ formatRange((row as AdminIklanPekerja).tarif_min, (row as AdminIklanPekerja).tarif_max) }}
       </template>
 
-      <template #cell-lokasi="{ row }">
-        {{ truncate((row as AdminIklanPekerja).lokasi, 30) }}
+      <template #cell-jam_kerja="{ row }">
+        {{ (row as AdminIklanPekerja).jam_kerja ?? '-' }}
+      </template>
+
+      <template #cell-kontak="{ row }">
+        {{ (row as AdminIklanPekerja).phone_number ?? '-' }}
       </template>
 
       <template #cell-foto="{ row }">
@@ -149,6 +195,17 @@ const suspendCount = computed(() => suspendTargets.value.length)
           </BaseButton>
         </div>
       </template>
+
+      <template #cell-aksi="{ row }">
+        <button
+          type="button"
+          class="rounded-md p-1.5 text-brand-700 hover:bg-brand-50"
+          aria-label="Lihat detail"
+          @click="openDetail(row as AdminIklanPekerja)"
+        >
+          <BaseIcon name="eye" :size="18" />
+        </button>
+      </template>
     </ServerTable>
 
     <BulkSelectActionBar
@@ -159,6 +216,64 @@ const suspendCount = computed(() => suspendTargets.value.length)
     />
 
     <PopupFoto v-model:open="photoOpen" :urls="photoUrls" title="Foto Pekerjaan" />
+
+    <!-- Detail iklan + click-to-view NIK/KTP/Selfie poster (F-27b) -->
+    <BaseModal v-model:open="detailOpen" title="Detail Iklan Pekerja" size="lg">
+      <div v-if="loadingDetail" class="py-8 text-center text-slate-400">Memuat...</div>
+      <div v-else-if="current" class="space-y-3 text-sm">
+        <dl class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <dt class="text-slate-500">Nama</dt>
+            <dd class="font-medium">{{ current.nama }}</dd>
+          </div>
+          <div>
+            <dt class="text-slate-500">Upah</dt>
+            <dd>{{ formatRange(current.tarif_min, current.tarif_max) }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="text-slate-500">Pengalaman</dt>
+            <dd>{{ current.keahlian.join(', ') || '-' }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="text-slate-500">Deskripsi</dt>
+            <dd>{{ current.deskripsi }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="mb-1 text-slate-500">Dokumen Sensitif Poster (click-to-view, akses dicatat)</dt>
+            <dd class="flex flex-wrap items-center gap-3">
+              <MaskedValue
+                v-if="current.has_nik"
+                mode="text"
+                masked="xxx...xxxx"
+                label="NIK"
+                :fetch-real="fetchNik"
+              />
+              <span v-else class="text-xs text-slate-400">NIK tidak tersedia</span>
+              <MaskedValue
+                v-if="current.has_ktp"
+                mode="image"
+                masked="KTP"
+                label="Foto KTP"
+                :fetch-real="fetchKtp"
+              />
+              <span v-else class="text-xs text-slate-400">KTP tidak tersedia</span>
+              <MaskedValue
+                v-if="current.has_selfie"
+                mode="image"
+                masked="Selfie"
+                label="Foto Selfie"
+                :fetch-real="fetchSelfie"
+              />
+              <span v-else class="text-xs text-slate-400">Selfie tidak tersedia</span>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-slate-500">Status</dt>
+            <dd><StatusBadge :status="current.moderation_status" /></dd>
+          </div>
+        </dl>
+      </div>
+    </BaseModal>
 
     <ModalConfirm
       v-model:open="suspendOpen"
